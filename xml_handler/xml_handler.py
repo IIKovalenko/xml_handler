@@ -49,16 +49,18 @@ def stage1(path='./', num_zip=50, num_xml=100):
 
     while len(uids) < num_zip * num_xml:
         uids.add(make_random_string(UID_LENGTH))
-    
+
     fname_len = len(str(max(num_zip, num_xml)))
 
     pool = mp.Pool()
     results = []
 
     for i in range(num_zip):
-        results.append(pool.apply_async(make_zip, 
-            args=(path + str(i + 1).zfill(fname_len) + '.zip', [uids.pop() for _ in range(num_xml)], fname_len)))
-    
+        results.append(pool.apply_async(make_zip, args=(
+            path + str(i + 1).zfill(fname_len) + '.zip',
+            [uids.pop() for _ in range(num_xml)],
+            fname_len)))
+
     results = [r.get() for r in results]
 
 
@@ -80,7 +82,7 @@ def make_zip(file_name, uids, fname_len):
 def make_xml(uid):
     """
     Creates xml string according to the specified format.
-    
+
     Args:
         uid (str): The unique string for the id tag.
 
@@ -105,13 +107,13 @@ def make_xml(uid):
 
     for _ in range(random.randint(1, 10)):
         xml.append('\t\t<object name=\'{}\'/>\n'.format(make_random_string(OBJECT_NAME_LENGTH)))
-   
+
     xml.append('\t</objects>\n</root>\n')
 
     return ''.join(xml)
 
 
-def make_random_string(length):
+def make_random_string(size):
     """
     Generates a random string.
 
@@ -119,15 +121,15 @@ def make_random_string(length):
         length (int): Length of the string.
 
     Returns:
-        str: The string generated.    
+        str: The string generated.
     """
-    return ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for _ in range(length))
+    return ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits) for _ in range(size))
 
 
 def stage2(path='./'):
     """
     Processes zip files and creates 2 csv files. For more info read README.md, please.
-    
+
     Args:
         path (str): The working directory with zip archives.
 
@@ -136,11 +138,10 @@ def stage2(path='./'):
         2.csv header line: 'id, object_name'
     """
 
-    regexes = [
-        re.compile(r'<var name=\'id\' value=\'([^\']*)\'/>'),
-        re.compile(r'<var name=\'level\' value=\'([^\']*)\'/>'),
-        re.compile(r'<object name=\'([^\']*)\'/>')
-        ]
+    regexes = list(map(re.compile, [
+        r'<var name=\'id\' value=\'([^\']*)\'/>',
+        r'<var name=\'level\' value=\'([^\']*)\'/>',
+        r'<object name=\'([^\']*)\'/>']))
 
     pool = mp.Pool()
     results = []
@@ -154,7 +155,7 @@ def stage2(path='./'):
         fcsv.write(''.join(['id, level\n'] + [r.get()[0] for r in results]))
 
     with open('2.csv', 'w') as fcsv:
-        fcsv.write(''.join(['id, object_name\n'] + [r.get()[1] for r in results]))        
+        fcsv.write(''.join(['id, object_name\n'] + [r.get()[1] for r in results]))
 
 
 def parse_zip(file_name, regexes):

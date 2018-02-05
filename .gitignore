@@ -1,3 +1,5 @@
 *.zip
 *.csv
 .vscode
+.tox
+*.pyc
